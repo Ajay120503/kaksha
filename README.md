@@ -61,3 +61,187 @@ It provides a centralized space for teachers and students to manage classes, pos
 ```bash
 git clone https://github.com/yourusername/kaksha.git
 cd kaksha/backend
+```
+### 2. CInstall Dependencies
+```bash
+npm install
+```
+### 3. Environment Variables
+- **Create a** .env **file in backend**:
+```bash
+PORT=5001
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+```
+### 4. Run the Backend
+```bash
+npm run dev
+```
+---
+
+- **File Uploads**
+
+- Allowed file types: images (jpeg, png, jpg), audio (mp3), PDF, DOC, PPT
+- Max file size: 10MB
+- Uploaded to Cloudinary
+  
+---
+
+---
+
+- **Real-Time Updates (Socket.io)**
+- joinClass → Join classroom room
+- newPost → Refresh posts in classroom
+- commentAdded → Refresh comments on a post
+- assignmentAdded → Refresh assignments in classroom
+- submissionAdded → Refresh submissions for assignments
+  
+---
+
+- **🔧 Folder Structure (Backend)**
+```bash
+backend
+├── package.json
+├── package-lock.json
+├── README.md
+├── routeTesting.text
+├── server.js
+└── src
+    ├── app.js
+    ├── config
+    │   ├── cloudinary.js
+    │   └── db.js
+    ├── controllers
+    │   ├── assignmentController.js
+    │   ├── authController.js
+    │   ├── classroomController.js
+    │   ├── commentController.js
+    │   ├── materialController.js
+    │   ├── postController.js
+    │   ├── submissionController.js
+    │   └── uploadController.js
+    ├── middleware
+    │   ├── authMiddleware.js
+    │   └── roleMiddleware.js
+    ├── models
+    │   ├── Assignment.js
+    │   ├── Classroom.js
+    │   ├── Comment.js
+    │   ├── Material.js
+    │   ├── Notification.js
+    │   ├── Post.js
+    │   ├── Submission.js
+    │   └── User.js
+    ├── routes
+    │   ├── assignmentRoutes.js
+    │   ├── authRoutes.js
+    │   ├── classroomRoutes.js
+    │   ├── commentRoutes.js
+    │   ├── materialRoutes.js
+    │   ├── notificationRoutes.js
+    │   ├── postRoutes.js
+    │   ├── submissionRoutes.js
+    │   └── uploadRoutes.js
+    └── utils
+        ├── generateCode.js
+        ├── sendNotification.js
+        └── upload.js
+```
+
+---
+- **📌 Author**
+
+- Ajay Ganesh Kandhare
+- Email: ajaykandhare12@gmail.com
+---
+
+### -**Routes**
+```bash
+POST http://localhost:5001/api/auth/register
+
+Authorization: Bearer <token> 
+Content-Type: application/json
+
+POST http://localhost:5001/api/auth/login
+GET  http://localhost:5001/api/auth/me
+
+// register
+
+// { 
+//     "name": "Ajay Kandhare", 
+//     "email": "ajaykandhare12@gmail.com", 
+//     "password": "ajay@#1205", 
+//     "role": "student" 
+// }
+
+// login
+
+// { 
+//     "email": "ajaykandhare12@gmail.com", 
+//     "password": "ajay@#1205"
+// }
+
+// me
+
+// {}
+
+
+POST http://localhost:5001/api/classroom/create
+POST http://localhost:5001/api/classroom/join
+GET  http://localhost:5001/api/classroom/my
+
+// classroom/create
+
+// { 
+//     "name": "MSC.CA", 
+//     "description": "Computer Application" 
+// }
+
+// classroom/join
+
+// { 
+//     "code": "Z8SHBD" 
+// }
+
+
+POST http://localhost:5001/api/posts/class/:classId
+GET  http://localhost:5001/api/posts/class/:classId
+
+// posts/class/:classId
+
+// { 
+//     "classId": "694ac4e505dc962832fa6bfb", 
+//     "text": "Welcome to class!" 
+// }
+
+
+POST http://localhost:5001/api/comments/add
+GET  http://localhost:5001/api/comments/:postId
+DELETE http://localhost:5001/api/comments/:id
+
+// comments/add
+
+// { 
+//     "postId": "694ac4e505dc962832fa6bfb", 
+//     "text": "Great post!"
+//     // "parentComment" : "Hi Ajay"
+// }
+
+// delete 
+
+// {}
+
+
+POST http://localhost:5001/api/assignments/create
+GET  http://localhost:5001/api/assignments/:id
+
+POST http://localhost:5001/api/submissions/submit
+PUT  http://localhost:5001/api/submissions/grade/:id
+
+
+POST http://localhost:5001/api/materials/upload
+GET  http://localhost:5001/api/materials/:id
+```
