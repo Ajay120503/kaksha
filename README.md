@@ -232,6 +232,9 @@ GET  http://localhost:5001/api/assignments/:id
 
 POST http://localhost:5001/api/submissions/submit
 PUT  http://localhost:5001/api/submissions/grade/:id
+
+POST http://localhost:5001/api/materials/upload
+GET  http://localhost:5001/api/materials/:id
 ```
 ---
 
@@ -241,8 +244,3 @@ PUT  http://localhost:5001/api/submissions/grade/:id
 - Email: ajaykandhare12@gmail.com
 
 ---
-
-
-POST http://localhost:5001/api/materials/upload
-GET  http://localhost:5001/api/materials/:id
-```
