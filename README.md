@@ -148,14 +148,6 @@ backend
         ├── sendNotification.js
         └── upload.js
 ```
-
----
-
-- **📌 Author**
-
-- Ajay Ganesh Kandhare
-- Email: ajaykandhare12@gmail.com
-
 ---
 
 ### **Routes**
@@ -240,6 +232,15 @@ GET  http://localhost:5001/api/assignments/:id
 
 POST http://localhost:5001/api/submissions/submit
 PUT  http://localhost:5001/api/submissions/grade/:id
+```
+---
+
+- **📌 Author**
+
+- Ajay Ganesh Kandhare
+- Email: ajaykandhare12@gmail.com
+
+---
 
 
 POST http://localhost:5001/api/materials/upload
