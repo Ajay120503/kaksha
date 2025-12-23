@@ -158,7 +158,7 @@ backend
 
 ---
 
-### -**Routes**
+### **Routes**
 ```bash
 POST http://localhost:5001/api/auth/register
 
