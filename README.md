@@ -87,8 +87,6 @@ npm run dev
 - Allowed file types: images (jpeg, png, jpg), audio (mp3), PDF, DOC, PPT
 - Max file size: 10MB
 - Uploaded to Cloudinary
-  
----
 
 ---
 
@@ -152,10 +150,12 @@ backend
 ```
 
 ---
+
 - **📌 Author**
 
 - Ajay Ganesh Kandhare
 - Email: ajaykandhare12@gmail.com
+
 ---
 
 ### -**Routes**
@@ -170,23 +170,23 @@ GET  http://localhost:5001/api/auth/me
 
 // register
 
-// { 
-//     "name": "Ajay Kandhare", 
-//     "email": "ajaykandhare12@gmail.com", 
-//     "password": "ajay@#1205", 
-//     "role": "student" 
-// }
+{ 
+    "name": "Ajay Kandhare", 
+    "email": "ajaykandhare12@gmail.com", 
+    "password": "ajay@#1205", 
+    "role": "student" 
+}
 
 // login
 
-// { 
-//     "email": "ajaykandhare12@gmail.com", 
-//     "password": "ajay@#1205"
-// }
+{ 
+    "email": "ajaykandhare12@gmail.com", 
+    "password": "ajay@#1205"
+ }
 
 // me
 
-// {}
+{}
 
 
 POST http://localhost:5001/api/classroom/create
@@ -195,16 +195,16 @@ GET  http://localhost:5001/api/classroom/my
 
 // classroom/create
 
-// { 
-//     "name": "MSC.CA", 
-//     "description": "Computer Application" 
-// }
+ { 
+    "name": "MSC.CA", 
+    "description": "Computer Application" 
+ }
 
 // classroom/join
 
-// { 
-//     "code": "Z8SHBD" 
-// }
+ { 
+    "code": "Z8SHBD" 
+ }
 
 
 POST http://localhost:5001/api/posts/class/:classId
@@ -212,10 +212,10 @@ GET  http://localhost:5001/api/posts/class/:classId
 
 // posts/class/:classId
 
-// { 
-//     "classId": "694ac4e505dc962832fa6bfb", 
-//     "text": "Welcome to class!" 
-// }
+{ 
+     "classId": "694ac4e505dc962832fa6bfb", 
+     "text": "Welcome to class!" 
+ }
 
 
 POST http://localhost:5001/api/comments/add
@@ -224,15 +224,15 @@ DELETE http://localhost:5001/api/comments/:id
 
 // comments/add
 
-// { 
-//     "postId": "694ac4e505dc962832fa6bfb", 
-//     "text": "Great post!"
-//     // "parentComment" : "Hi Ajay"
-// }
+{ 
+     "postId": "694ac4e505dc962832fa6bfb", 
+     "text": "Great post!"
+    // "parentComment" : "Hi Ajay"
+}
 
 // delete 
 
-// {}
+{}
 
 
 POST http://localhost:5001/api/assignments/create
