@@ -62,7 +62,7 @@ It provides a centralized space for teachers and students to manage classes, pos
 git clone https://github.com/yourusername/kaksha.git
 cd kaksha/backend
 ```
-### 2. CInstall Dependencies
+### 2. Install Dependencies
 ```bash
 npm install
 ```
