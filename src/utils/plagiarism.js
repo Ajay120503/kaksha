@@ -1,4 +1,3 @@
-const natural = require("natural");
 const stopword = require("stopword");
 
 function preprocess(text) {

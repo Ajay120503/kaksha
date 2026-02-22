@@ -5,6 +5,7 @@ const Classroom = require("../models/Classroom");
 const { cosineSimilarity } = require("../utils/plagiarism");
 const { extractTextFromFile } = require("../utils/fileExtractor.js");
 const { createNotification } = require("../utils/notification");
+const Notification = require("../models/Notification");
 
 // Student submits assignment
 exports.submitAssignment = async (req, res) => {
@@ -29,9 +30,9 @@ exports.submitAssignment = async (req, res) => {
     const extractedText = fileUrl
       ? await extractTextFromFile(fileUrl, fileType)
       : "";
-    
+
     console.log("ExtractedText TYPE:", typeof extractedText);
-    console.log("Extracted Text Length:", extractedText.length); 
+    console.log("Extracted Text Length:", extractedText.length);
 
     // 🔎 Check if student already submitted
     const existing = await Submission.findOne({
@@ -63,6 +64,7 @@ exports.submitAssignment = async (req, res) => {
       }
     }
 
+
     /* ================= RESUBMISSION ================= */
     if (existing) {
       if (existing.marks !== undefined && existing.marks !== null) {
@@ -70,8 +72,6 @@ exports.submitAssignment = async (req, res) => {
           .status(400)
           .json({ msg: "Assignment already graded. Cannot resubmit." });
       }
-
-      const isLate = new Date() > new Date(assignment.deadline);
 
       existing.file = fileUrl || existing.file;
       existing.extractedText = extractedText || existing.extractedText;
@@ -88,6 +88,31 @@ exports.submitAssignment = async (req, res) => {
       };
 
       await existing.save();
+
+      /* PLAGIARISM NOTIFICATION (RESUBMIT) */
+      const classroom = await Classroom.findById(assignment.classroom);
+
+      if (existing.plagiarism.flagged && classroom?.teacher) {
+        const alreadyNotified = await Notification.findOne({
+          type: "submission",
+          createdBy: req.user._id,
+          link: `/assignment/submissions/${assignment._id}`,
+          "recipients.user": classroom.teacher,
+        });
+
+        if (!alreadyNotified) {
+          await createNotification({
+            title: "Plagiarism Detected ⚠️",
+            message: `${req.user.name}'s resubmission shows ${existing.plagiarism.score}% similarity in "${assignment.title}".`,
+            users: [classroom.teacher],
+            role: "teacher",
+            createdBy: req.user._id,
+            type: "submission",
+            link: `/assignment/submissions/${assignment._id}`,
+          });
+        }
+      }
+
       return res.json(existing);
     }
 
@@ -96,7 +121,7 @@ exports.submitAssignment = async (req, res) => {
       assignment: assignmentId,
       student: req.user._id,
       file: fileUrl,
-      extractedText: extractedText,
+      extractedText,
       submittedAt: new Date(),
       isLate:
         assignment.deadline &&
@@ -108,17 +133,29 @@ exports.submitAssignment = async (req, res) => {
       },
     });
 
+    /* PLAGIARISM NOTIFICATION */
     const classroom = await Classroom.findById(assignment.classroom);
 
-    await createNotification({
-      title: "New Submission",
-      message: `${req.user.name} submitted an assignment in "${classroom.name}".`,
-      users: [classroom.teacher],
-      role: "teacher",
-      createdBy: req.user._id,
-      type: "submission",
-      link: `/assignment/submission/${assignment._id}`,
-    });
+    if (submission.plagiarism.flagged && classroom?.teacher) {
+      const alreadyNotified = await Notification.findOne({
+        type: "submission",
+        createdBy: req.user._id,
+        link: `/assignment/submissions/${assignment._id}`,
+        "recipients.user": classroom.teacher,
+      });
+
+      if (!alreadyNotified) {
+        await createNotification({
+          title: "Plagiarism Detected ⚠️",
+          message: `${req.user.name}'s submission shows ${submission.plagiarism.score}% similarity in "${assignment.title}".`,
+          users: [classroom.teacher],
+          role: "teacher",
+          createdBy: req.user._id,
+          type: "submission",
+          link: `/assignment/submissions/${assignment._id}`,
+        });
+      }
+    }
 
     console.log({
       fileUrl,
