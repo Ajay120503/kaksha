@@ -96,7 +96,7 @@ exports.submitAssignment = async (req, res) => {
         const alreadyNotified = await Notification.findOne({
           type: "submission",
           createdBy: req.user._id,
-          link: `/assignment/submissions/${assignment._id}`,
+          link: `/assignment/submission/${assignment._id}`,
           "recipients.user": classroom.teacher,
         });
 
@@ -108,7 +108,7 @@ exports.submitAssignment = async (req, res) => {
             role: "teacher",
             createdBy: req.user._id,
             type: "submission",
-            link: `/assignment/submissions/${assignment._id}`,
+            link: `/assignment/submission/${assignment._id}`,
           });
         }
       }
@@ -140,7 +140,7 @@ exports.submitAssignment = async (req, res) => {
       const alreadyNotified = await Notification.findOne({
         type: "submission",
         createdBy: req.user._id,
-        link: `/assignment/submissions/${assignment._id}`,
+        link: `/assignment/submission/${assignment._id}`,
         "recipients.user": classroom.teacher,
       });
 
@@ -152,7 +152,7 @@ exports.submitAssignment = async (req, res) => {
           role: "teacher",
           createdBy: req.user._id,
           type: "submission",
-          link: `/assignment/submissions/${assignment._id}`,
+          link: `/assignment/submission/${assignment._id}`,
         });
       }
     }
