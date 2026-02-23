@@ -49,6 +49,7 @@ const notificationSchema = new mongoose.Schema(
         "general",
         "material",
         "post",
+        "change_role",
         "comment"
 
       ],

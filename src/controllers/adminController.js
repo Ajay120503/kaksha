@@ -1,7 +1,6 @@
 const User = require("../models/User");
 const Classroom = require("../models/Classroom");
-
-/* ================= USERS ================= */
+const { createNotification } = require("../utils/notification");
 
 // Get all users
 exports.getAllUsers = async (req, res) => {
@@ -19,20 +18,57 @@ exports.changeUserRole = async (req, res) => {
     const { role } = req.body;
     const allowed = ["student", "teacher", "admin"];
 
-    if (!allowed.includes(role))
-      return res.status(400).json({ message: "Invalid role" });
+    /* ================= VALIDATION ================= */
 
-    if (req.user.id === req.params.id)
-      return res.status(400).json({ message: "Cannot change your own role" });
+    if (!allowed.includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    // prevent self role change
+    if (req.user.id === req.params.id) {
+      return res
+        .status(400)
+        .json({ message: "Cannot change your own role" });
+    }
+
+    /* ================= FIND USER ================= */
 
     const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    const oldRole = user.role;
+
+    // avoid unnecessary update
+    if (oldRole === role) {
+      return res.status(400).json({
+        message: "User already has this role",
+      });
+    }
+
+    /* ================= UPDATE ROLE ================= */
 
     user.role = role;
     await user.save();
 
-    res.json({ message: "Role updated", user });
-  } catch {
+    /* ================= NOTIFICATION ================= */
+
+    await createNotification({
+      title: "Role Updated",
+      message: `Your role has been changed from "${oldRole}" to "${role}" by admin.`,
+      users: [user._id], // notify affected user
+      role: role, // new role
+      createdBy: req.user._id, // admin who changed
+      type: "change_role",
+      link: "/profile",
+    });
+
+    res.json({
+      message: "Role updated successfully",
+      user,
+    });
+  } catch (err) {
+    console.error("Role update error:", err.message);
     res.status(500).json({ message: "Role update failed" });
   }
 };
