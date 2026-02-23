@@ -12,10 +12,12 @@ exports.submitAssignment = async (req, res) => {
   try {
     const { assignmentId, fileUrl, fileType } = req.body;
 
-    if (!assignmentId || (!fileUrl)) {
-      return res
-        .status(400)
-        .json({ msg: "Assignment ID and submission content required" });
+    /* ================= VALIDATION ================= */
+
+    if (!assignmentId || !fileUrl) {
+      return res.status(400).json({
+        msg: "Assignment ID and submission content required",
+      });
     }
 
     if (!mongoose.Types.ObjectId.isValid(assignmentId)) {
@@ -23,9 +25,15 @@ exports.submitAssignment = async (req, res) => {
     }
 
     const assignment = await Assignment.findById(assignmentId);
-    if (!assignment) {
+    if (!assignment)
       return res.status(404).json({ msg: "Assignment not found" });
-    }
+
+    // Fetch classroom ONCE (important)
+    const classroom = await Classroom.findById(assignment.classroom);
+    if (!classroom)
+      return res.status(404).json({ msg: "Classroom not found" });
+
+    /* ================= TEXT EXTRACTION ================= */
 
     const extractedText = fileUrl
       ? await extractTextFromFile(fileUrl, fileType)
@@ -34,13 +42,15 @@ exports.submitAssignment = async (req, res) => {
     console.log("ExtractedText TYPE:", typeof extractedText);
     console.log("Extracted Text Length:", extractedText.length);
 
-    // 🔎 Check if student already submitted
+    /* ================= CHECK EXISTING SUBMISSION ================= */
+
     const existing = await Submission.findOne({
       assignment: assignmentId,
       student: req.user._id,
     });
 
-    // 🔍 Get previous submissions (excluding current student)
+    /* ================= PLAGIARISM CHECK ================= */
+
     const previousSubmissions = await Submission.find({
       assignment: assignmentId,
       student: { $ne: req.user._id },
@@ -64,22 +74,23 @@ exports.submitAssignment = async (req, res) => {
       }
     }
 
+    /* ============================================================
+       ===================== RESUBMISSION =========================
+       ============================================================ */
 
-    /* ================= RESUBMISSION ================= */
     if (existing) {
       if (existing.marks !== undefined && existing.marks !== null) {
-        return res
-          .status(400)
-          .json({ msg: "Assignment already graded. Cannot resubmit." });
+        return res.status(400).json({
+          msg: "Assignment already graded. Cannot resubmit.",
+        });
       }
 
-      existing.file = fileUrl || existing.file;
-      existing.extractedText = extractedText || existing.extractedText;
+      existing.file = fileUrl;
+      existing.extractedText = extractedText;
       existing.resubmitted = true;
       existing.submittedAt = new Date();
       existing.isLate =
-        new Date(existing.submittedAt) >
-        new Date(assignment.deadline);
+        new Date(existing.submittedAt) > new Date(assignment.deadline);
 
       existing.plagiarism = {
         score: highestScore,
@@ -89,12 +100,25 @@ exports.submitAssignment = async (req, res) => {
 
       await existing.save();
 
-      /* PLAGIARISM NOTIFICATION (RESUBMIT) */
-      const classroom = await Classroom.findById(assignment.classroom);
+      /* ---------- NEW SUBMISSION NOTIFICATION ---------- */
 
-      if (existing.plagiarism.flagged && classroom?.teacher) {
+      if (classroom.teacher) {
+        await createNotification({
+          title: "New Submission",
+          message: `${req.user.name} resubmitted "${assignment.title}" in ${classroom.name}.`,
+          users: [classroom.teacher],
+          role: "teacher",
+          createdBy: req.user._id,
+          type: "new_submission",
+          link: `/assignment/submission/${assignment._id}`,
+        });
+      }
+
+      /* ---------- PLAGIARISM ALERT (ONLY ONCE) ---------- */
+
+      if (existing.plagiarism.flagged && classroom.teacher) {
         const alreadyNotified = await Notification.findOne({
-          type: "submission",
+          type: "plagiarism_alert",
           createdBy: req.user._id,
           link: `/assignment/submission/${assignment._id}`,
           "recipients.user": classroom.teacher,
@@ -107,7 +131,7 @@ exports.submitAssignment = async (req, res) => {
             users: [classroom.teacher],
             role: "teacher",
             createdBy: req.user._id,
-            type: "submission",
+            type: "plagiarism_alert",
             link: `/assignment/submission/${assignment._id}`,
           });
         }
@@ -116,7 +140,10 @@ exports.submitAssignment = async (req, res) => {
       return res.json(existing);
     }
 
-    /* ================= FIRST SUBMISSION ================= */
+    /* ============================================================
+       ===================== FIRST SUBMISSION =====================
+       ============================================================ */
+
     const submission = await Submission.create({
       assignment: assignmentId,
       student: req.user._id,
@@ -133,12 +160,25 @@ exports.submitAssignment = async (req, res) => {
       },
     });
 
-    /* PLAGIARISM NOTIFICATION */
-    const classroom = await Classroom.findById(assignment.classroom);
+    /* ---------- NEW SUBMISSION NOTIFICATION ---------- */
 
-    if (submission.plagiarism.flagged && classroom?.teacher) {
+    if (classroom.teacher) {
+      await createNotification({
+        title: "New Submission",
+        message: `${req.user.name} submitted "${assignment.title}" in ${classroom.name}.`,
+        users: [classroom.teacher],
+        role: "teacher",
+        createdBy: req.user._id,
+        type: "new_submission",
+        link: `/assignment/submission/${assignment._id}`,
+      });
+    }
+
+    /* ---------- PLAGIARISM ALERT (ONLY ONCE) ---------- */
+
+    if (submission.plagiarism.flagged && classroom.teacher) {
       const alreadyNotified = await Notification.findOne({
-        type: "submission",
+        type: "plagiarism_alert",
         createdBy: req.user._id,
         link: `/assignment/submission/${assignment._id}`,
         "recipients.user": classroom.teacher,
@@ -151,7 +191,7 @@ exports.submitAssignment = async (req, res) => {
           users: [classroom.teacher],
           role: "teacher",
           createdBy: req.user._id,
-          type: "submission",
+          type: "plagiarism_alert",
           link: `/assignment/submission/${assignment._id}`,
         });
       }
@@ -165,7 +205,10 @@ exports.submitAssignment = async (req, res) => {
     res.status(201).json(submission);
   } catch (err) {
     console.error("Submit Assignment Error:", err.message);
-    res.status(500).json({ msg: "Server Error", error: err.message });
+    res.status(500).json({
+      msg: "Server Error",
+      error: err.message,
+    });
   }
 };
 

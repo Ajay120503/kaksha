@@ -43,6 +43,8 @@ const notificationSchema = new mongoose.Schema(
         "classroom",
         "announcement",
         "submission",
+        "new_submission",
+        "plagiarism_alert",
         "system",
         "general",
         "material",
