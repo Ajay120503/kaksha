@@ -44,17 +44,22 @@ exports.approveJoinRequest = async (req, res) => {
 };
 
 exports.rejectJoinRequest = async (req, res) => {
-  const request = await ClassJoinRequest.findById(req.params.id);
+  const request = await ClassJoinRequest.findById(req.params.id)
+    .populate("classroom")
+    .populate("student");
+
+  if (!request)
+    return res.status(404).json({ msg: "Request not found" });
 
   request.status = "rejected";
   request.reviewedBy = req.user._id;
   request.reviewedAt = new Date();
 
-    await request.save();
-    
-    await createNotification({
-    title: "Request rejected",
-    message: `You joined rejected by the "${request.classroom.name}"`,
+  await request.save();
+
+  await createNotification({
+    title: "Request Rejected",
+    message: `Your request to join "${request.classroom.name}" was rejected.`,
     users: [request.student._id],
     role: "student",
     createdBy: req.user._id,
