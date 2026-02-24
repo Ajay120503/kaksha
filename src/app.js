@@ -40,6 +40,8 @@ app.use("/api/upload", require("./routes/uploadRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/role-requests", require("./routes/roleRequestRoutes"));
+app.use("/api/join-requests", require("./routes/classJoinRequestRoutes"));
+
 
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {

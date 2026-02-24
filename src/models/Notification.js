@@ -41,6 +41,7 @@ const notificationSchema = new mongoose.Schema(
       enum: [
         "assignment",
         "classroom",
+        "class_join",
         "announcement",
         "submission",
         "new_submission",

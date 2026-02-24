@@ -2,6 +2,7 @@ const Classroom = require("../models/Classroom");
 const User = require("../models/User");
 const generateCode = require("../utils/generateCode");
 const { createNotification } = require("../utils/notification");
+const ClassJoinRequest = require("../models/ClassJoinRequest");
 
 exports.createClass = async (req, res) => {
   try {
@@ -94,60 +95,117 @@ exports.createClass = async (req, res) => {
   }
 };
 
+// exports.joinClass = async (req, res) => {
+//   try {
+//     const { code } = req.body;
+
+//     if (!code) return res.status(400).json({ msg: "Code is required" });
+
+//     const classroom = await Classroom.findOne({ code });
+
+//     if (!classroom)
+//       return res.status(404).json({ msg: "Invalid classroom code" });
+
+//     // Prevent teacher joining their own class
+//     if (classroom.teacher.toString() === req.user._id.toString()) {
+//       return res.status(400).json({ msg: "Teacher already owns this class" });
+//     }
+
+//     // BAN CHECK (NEW)
+//     if (
+//       classroom.bannedStudents &&
+//       classroom.bannedStudents.some(
+//         (id) => id.toString() === req.user._id.toString()
+//       )
+//     ) {
+//       return res
+//         .status(403)
+//         .json({ msg: "You are banned from this classroom" });
+//     }
+
+//     // Prevent duplicate joining
+//     const alreadyJoined = classroom.students.some(
+//       (id) => id.toString() === req.user._id.toString()
+//     );
+
+//     if (alreadyJoined)
+//       return res.status(400).json({ msg: "Already joined this classroom" });
+
+//     // Add student
+//     classroom.students.push(req.user._id);
+//     await classroom.save();
+
+//     // ================= NOTIFY TEACHER =================
+//     await createNotification({
+//       title: "New Student Joined",
+//       message: `${req.user.name} joined your class "${classroom.name}".`,
+//       users: [classroom.teacher],
+//       role: "teacher",
+//       createdBy: req.user._id,
+//       type: "classroom",
+//     });
+
+//     res.json({ msg: "Joined successfully", classroom });
+//   } catch (err) {
+//     console.error("Join Class Error:", err.message);
+//     res.status(500).json({ msg: "Server Error", error: err.message });
+//   }
+// };
+
 exports.joinClass = async (req, res) => {
   try {
     const { code } = req.body;
-
-    if (!code) return res.status(400).json({ msg: "Code is required" });
 
     const classroom = await Classroom.findOne({ code });
 
     if (!classroom)
       return res.status(404).json({ msg: "Invalid classroom code" });
 
-    // Prevent teacher joining their own class
-    if (classroom.teacher.toString() === req.user._id.toString()) {
-      return res.status(400).json({ msg: "Teacher already owns this class" });
-    }
+    // teacher cannot request
+    if (classroom.teacher.toString() === req.user._id.toString())
+      return res.status(400).json({ msg: "You own this class" });
 
-    // BAN CHECK (NEW)
-    if (
-      classroom.bannedStudents &&
-      classroom.bannedStudents.some(
-        (id) => id.toString() === req.user._id.toString()
-      )
-    ) {
-      return res
-        .status(403)
-        .json({ msg: "You are banned from this classroom" });
-    }
-
-    // Prevent duplicate joining
-    const alreadyJoined = classroom.students.some(
-      (id) => id.toString() === req.user._id.toString()
-    );
-
+    // already joined
+    const alreadyJoined = classroom.students.includes(req.user._id);
     if (alreadyJoined)
       return res.status(400).json({ msg: "Already joined this classroom" });
 
-    // Add student
-    classroom.students.push(req.user._id);
-    await classroom.save();
+    // already requested
+    const existing = await ClassJoinRequest.findOne({
+      classroom: classroom._id,
+      student: req.user._id,
+      status: "pending",
+    });
 
-    // ================= NOTIFY TEACHER =================
+    if (existing)
+      return res.status(400).json({
+        msg: "Join request already pending",
+      });
+
+    /* ===== CREATE REQUEST ===== */
+
+    await ClassJoinRequest.create({
+      classroom: classroom._id,
+      student: req.user._id,
+    });
+
+    /* ===== NOTIFY TEACHER ===== */
+
     await createNotification({
-      title: "New Student Joined",
-      message: `${req.user.name} joined your class "${classroom.name}".`,
+      title: "Join Request",
+      message: `${req.user.name} requested to join "${classroom.name}"`,
       users: [classroom.teacher],
       role: "teacher",
       createdBy: req.user._id,
-      type: "classroom",
+      type: "class_join",
+      link: "/join-requests",
     });
 
-    res.json({ msg: "Joined successfully", classroom });
+    res.json({ msg: "Join request sent to teacher" });
+
   } catch (err) {
-    console.error("Join Class Error:", err.message);
-    res.status(500).json({ msg: "Server Error", error: err.message });
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
   }
 };
 

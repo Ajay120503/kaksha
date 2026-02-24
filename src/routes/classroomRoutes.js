@@ -8,7 +8,6 @@ const {
   getClassById,
   deleteClass,
   leaveClass,
-  removeStudent,
   banStudent,
   unbanStudent,
 } = require("../controllers/classroomController");
