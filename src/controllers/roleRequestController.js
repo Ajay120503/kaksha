@@ -168,3 +168,25 @@ exports.getMyRoleRequest = async (req, res) => {
     res.status(500).json({ message: "Failed" });
   }
 };
+
+/* ================= ADMIN DELETE REQUEST ================= */
+
+exports.deleteRoleRequest = async (req, res) => {
+  try {
+    const request = await RoleRequest.findById(req.params.id);
+
+    if (!request)
+      return res
+        .status(404)
+        .json({ message: "Request not found" });
+
+    await request.deleteOne();
+
+    res.json({
+      message: "Role request deleted successfully",
+    });
+  } catch (err) {
+    console.error("Delete Request Error:", err);
+    res.status(500).json({ message: "Delete failed" });
+  }
+};

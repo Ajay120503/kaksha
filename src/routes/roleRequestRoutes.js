@@ -8,6 +8,7 @@ const {
   approveRoleRequest,
   rejectRoleRequest,
   getMyRoleRequest,
+  deleteRoleRequest
 } = require("../controllers/roleRequestController");
 
 /* STUDENT */
@@ -39,6 +40,13 @@ router.get(
   "/my-request",
   auth,
   getMyRoleRequest
+);
+
+router.delete(
+  "/:id",
+  auth,
+  roleMiddleware("admin"),
+  deleteRoleRequest
 );
 
 module.exports = router;
