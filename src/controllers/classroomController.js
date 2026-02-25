@@ -328,7 +328,6 @@ exports.leaveClass = async (req, res) => {
       type: "classroom",
     });
 
-    // Optional: remove from user's joined list
     await User.updateOne(
       { _id: req.user._id },
       { $pull: { classroomsJoined: classroom._id } }

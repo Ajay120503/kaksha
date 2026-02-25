@@ -5,13 +5,11 @@ module.exports = async function auth(req, res, next) {
   try {
     let token;
 
-    // 1️⃣ Bearer token
     const authHeader = req.headers.authorization;
     if (authHeader?.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
     }
 
-    // 2️⃣ Cookie token (optional)
     if (!token && req.cookies?.token) {
       token = req.cookies.token;
     }
@@ -20,24 +18,20 @@ module.exports = async function auth(req, res, next) {
       return res.status(401).json({ message: "Unauthorized: No token provided" });
     }
 
-    // 3️⃣ Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 4️⃣ Fetch user
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
 
-    // 5️⃣ Block check
     if (user.isBlocked) {
       return res
         .status(403)
         .json({ message: "Account is blocked. Contact admin." });
     }
 
-    // 6️⃣ Attach user
     req.user = user;
     req.userId = user._id;
 
