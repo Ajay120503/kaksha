@@ -74,6 +74,34 @@ exports.submitAssignment = async (req, res) => {
       }
     }
 
+    /* ================= PLAGIARISM CHECK ================= */
+
+    // const previousSubmissions = await Submission.find({
+    //   assignment: assignmentId,
+    //   student: { $ne: req.user._id },
+    // }).populate("student", "name email"); // populate student details
+
+    // let highestScore = 0;
+    // let matchedWith = [];
+
+    // for (const sub of previousSubmissions) {
+    //   if (!sub.extractedText || !extractedText) continue;
+
+    //   const score = cosineSimilarity(extractedText, sub.extractedText);
+
+    //   if (score >= 30) {
+    //     matchedWith.push({
+    //       studentId: sub.student._id,
+    //       studentName: sub.student.name,
+    //       studentEmail: sub.student.email,
+    //       similarity: score,
+    //       submissionId: sub._id,
+    //     });
+
+    //     highestScore = Math.max(highestScore, score);
+    //   }
+    // }
+
     /* ============================================================
        ===================== RESUBMISSION =========================
        ============================================================ */

@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const { createNotification } = require("../utils/notification");
+// const crypto = require("crypto");
+// const { sendOTPEmail } = require("../utils/sendOTP");
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -86,6 +88,48 @@ exports.register = async (req, res) => {
   }
 };
 
+// exports.register = async (req, res) => {
+//   try {
+//     const { name, email, password, role } = req.body;
+
+//     const exists = await User.findOne({ email });
+//     if (exists)
+//       return res.status(400).json({ message: "Email already registered" });
+
+//     const allowedRoles = ["student", "teacher"];
+//     const userRole = allowedRoles.includes(role) ? role : "student";
+
+//     /* ===== CREATE OTP ===== */
+//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     const hashedOTP = crypto
+//       .createHash("sha256")
+//       .update(otp)
+//       .digest("hex");
+
+//     const user = await User.create({
+//       name,
+//       email,
+//       password,
+//       role: userRole,
+//       otpCode: hashedOTP,
+//       otpExpire: Date.now() + 10 * 60 * 1000, // 10 min
+//       isVerified: false,
+//     });
+
+//     /* ===== SEND EMAIL ===== */
+//     await sendOTPEmail(email, otp);
+
+//     res.status(201).json({
+//       message: "OTP sent to email. Please verify account.",
+//       email,
+//     });
+
+//   } catch (error) {
+//     res.status(500).json({ message: "Registration failed" });
+//   }
+// };
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -101,6 +145,11 @@ exports.login = async (req, res) => {
     const isMatch = await user.matchPassword(password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
+
+    // if (!user.isVerified)
+    //   return res.status(401).json({
+    //   message: "Please verify your email first",
+    // });
 
     const token = generateToken(user);
 
@@ -134,6 +183,75 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// exports.verifyOTP = async (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+
+//     const hashedOTP = crypto
+//       .createHash("sha256")
+//       .update(otp)
+//       .digest("hex");
+
+//     const user = await User.findOne({
+//       email,
+//       otpCode: hashedOTP,
+//       otpExpire: { $gt: Date.now() },
+//     });
+
+//     if (!user)
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
+
+//     user.isVerified = true;
+//     user.otpCode = undefined;
+//     user.otpExpire = undefined;
+
+//     await user.save();
+
+//     const token = generateToken(user);
+
+//     res.json({
+//       message: "Account verified successfully",
+//       token,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//       },
+//     });
+
+//   } catch {
+//     res.status(500).json({ message: "OTP verification failed" });
+//   }
+// };
+
+// exports.resendOTP = async (req, res) => {
+//   const { email } = req.body;
+
+//   const user = await User.findOne({ email });
+
+//   if (!user)
+//     return res.status(404).json({ message: "User not found" });
+
+//   if (user.isVerified)
+//     return res.status(400).json({ message: "Already verified" });
+
+//   const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//   user.otpCode = crypto
+//     .createHash("sha256")
+//     .update(otp)
+//     .digest("hex");
+
+//   user.otpExpire = Date.now() + 10 * 60 * 1000;
+
+//   await user.save();
+
+//   await sendOTPEmail(email, otp);
+
+//   res.json({ message: "OTP resent successfully" });
+// };
 
 exports.updateProfile = async (req, res) => {
   try {

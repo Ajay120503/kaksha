@@ -28,7 +28,10 @@ const submissionSchema = new mongoose.Schema(
       matchedWith: [
         {
           student: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-          score: Number
+          similarity: {
+          type: Number,
+          default: 0
+        }
         }
       ],
     },
@@ -53,6 +56,6 @@ const submissionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-submissionSchema.index({ assignment: 1 });
+submissionSchema.index({ assignment: 1, student: 1 });
 
 module.exports = mongoose.model("Submission", submissionSchema);

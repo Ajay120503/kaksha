@@ -3,10 +3,12 @@ const {
   register,
   login,
   updateProfile,
-  updatePassword
+  updatePassword,
+  // verifyOTP,
+  // resendOTP
 } = require("../controllers/authController");
 const auth = require("../middleware/authMiddleware");
-const User = require("../models/User");
+const User = require("../models/User");;
 
 // Register
 router.post("/register", register);
@@ -25,5 +27,8 @@ router.patch("/update-profile", auth, updateProfile);
 
 // Update password
 router.patch("/update-password", auth, updatePassword);
+
+// router.post("/verify-otp", verifyOTP);
+// router.post("/resend-otp", resendOTP);
 
 module.exports = router;

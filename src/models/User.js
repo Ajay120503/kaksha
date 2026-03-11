@@ -43,7 +43,16 @@ const userSchema = new mongoose.Schema(
       { type: mongoose.Schema.Types.ObjectId, ref: "Classroom" }
     ],
 
-    passwordChangedAt: Date
+    passwordChangedAt: Date,
+
+    /* ===== OTP VERIFICATION ===== */
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+
+    otpCode: String,
+    otpExpire: Date,
   },
   { timestamps: true }
 );
