@@ -81,6 +81,47 @@ exports.getRoleRequests = async (req, res) => {
 
 /* ============== ADMIN APPROVE REQUEST ====================== */
 
+// exports.approveRoleRequest = async (req, res) => {
+//   try {
+//     const request = await RoleRequest.findById(req.params.id)
+//       .populate("user");
+
+//     if (!request)
+//       return res.status(404).json({ message: "Request not found" });
+
+//     if (request.status !== "pending")
+//       return res.status(400).json({
+//         message: "Request already processed",
+//       });
+
+//     /* ===== UPDATE USER ROLE ===== */
+
+//     request.user.role = "teacher";
+//     await request.user.save();
+
+//     /* ===== UPDATE REQUEST ===== */
+
+//     request.status = "approved";
+//     request.reviewedBy = req.user._id;
+//     request.reviewedAt = new Date();
+
+//     await request.save();
+
+//     await createNotification({
+//       title: "Role Approved",
+//       message: "Your Teacher role request has been approved.",
+//       users: [request.user._id],
+//       role: "teacher",
+//       createdBy: req.user._id,
+//       type: "role_request",
+//     });
+
+//     res.json({ message: "Role approved successfully" });
+//   } catch (err) {
+//     res.status(500).json({ message: "Approval failed" });
+//   }
+// };
+
 exports.approveRoleRequest = async (req, res) => {
   try {
     const request = await RoleRequest.findById(req.params.id)
@@ -94,30 +135,48 @@ exports.approveRoleRequest = async (req, res) => {
         message: "Request already processed",
       });
 
-    /* ===== UPDATE USER ROLE ===== */
+    /* ===== BACKUP OLD ROLE ===== */
 
-    request.user.role = "teacher";
-    await request.user.save();
+    const oldRole = request.user.role;
 
-    /* ===== UPDATE REQUEST ===== */
+    try {
 
-    request.status = "approved";
-    request.reviewedBy = req.user._id;
-    request.reviewedAt = new Date();
+      /* ===== UPDATE USER ROLE ===== */
 
-    await request.save();
+      request.user.role = "teacher";
+      await request.user.save();
 
-    await createNotification({
-      title: "Role Approved",
-      message: "Your Teacher role request has been approved.",
-      users: [request.user._id],
-      role: "teacher",
-      createdBy: req.user._id,
-      type: "role_request",
-    });
+      /* ===== UPDATE REQUEST ===== */
 
-    res.json({ message: "Role approved successfully" });
+      request.status = "approved";
+      request.reviewedBy = req.user._id;
+      request.reviewedAt = new Date();
+
+      await request.save();
+
+      await createNotification({
+        title: "Role Approved",
+        message: "Your Teacher role request has been approved.",
+        users: [request.user._id],
+        role: "teacher",
+        createdBy: req.user._id,
+        type: "role_request",
+      });
+
+      res.json({ message: "Role approved successfully" });
+
+    } catch (err) {
+
+      /* ===== RESTORE OLD ROLE IF ERROR ===== */
+
+      request.user.role = oldRole;
+      await request.user.save();
+
+      throw err;
+    }
+
   } catch (err) {
+    console.error("Approval failed:", err);
     res.status(500).json({ message: "Approval failed" });
   }
 };
