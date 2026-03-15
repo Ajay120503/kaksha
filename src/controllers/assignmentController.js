@@ -180,7 +180,7 @@ exports.updateAssignment = async (req, res) => {
 
     const updated = await assignment.save();
 
-    // ================= NOTIFY STUDENTS =================
+    //================= NOTIFY STUDENTS =================
     if (classroom.students?.length) {
       await createNotification({
         title: "Assignment Updated",
@@ -189,7 +189,7 @@ exports.updateAssignment = async (req, res) => {
         role: "student",
         createdBy: req.user._id,
         type: "assignment",
-        link: `/assignments/${classId}`
+        link: `/assignments/${id}`
       });
     }
     res.json(updated);
