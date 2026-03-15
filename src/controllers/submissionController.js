@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Submission = require("../models/Submission");
 const Assignment = require("../models/Assignment");
 const Classroom = require("../models/Classroom");
-const { cosineSimilarity } = require("../utils/plagiarism");
+const { tfidfSimilarity } = require("../utils/plagiarism");
 const { extractTextFromFile } = require("../utils/fileExtractor.js");
 const { createNotification } = require("../utils/notification");
 const Notification = require("../models/Notification");
@@ -62,7 +62,7 @@ exports.submitAssignment = async (req, res) => {
     for (const sub of previousSubmissions) {
       if (!sub.extractedText || !extractedText) continue;
 
-      const score = cosineSimilarity(extractedText, sub.extractedText);
+      const score = tfidfSimilarity(extractedText, sub.extractedText);
 
       if (score >= 30) {
         matchedWith.push({
