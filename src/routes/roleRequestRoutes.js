@@ -8,7 +8,8 @@ const {
   approveRoleRequest,
   rejectRoleRequest,
   getMyRoleRequest,
-  deleteRoleRequest
+  deleteRoleRequest,
+  getPendingRoleRequestCount
 } = require("../controllers/roleRequestController");
 
 /* STUDENT */
@@ -47,6 +48,13 @@ router.delete(
   auth,
   roleMiddleware("admin"),
   deleteRoleRequest
+);
+
+router.get(
+  "/pending-count",
+  auth,
+  roleMiddleware("admin"),
+  getPendingRoleRequestCount
 );
 
 module.exports = router;

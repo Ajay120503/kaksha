@@ -74,3 +74,23 @@ exports.deleteJoinRequest = async (req, res) => {
 
   res.json({ msg: "Request deleted" });
 };
+
+/* ===== GET PENDING REQUEST COUNT FOR TEACHER ===== */
+
+exports.getJoinRequestCount = async (req, res) => {
+  try {
+    const requests = await ClassJoinRequest.find()
+      .populate("classroom", "teacher");
+
+    const count = requests.filter(
+      r =>
+        r.status === "pending" &&
+        r.classroom.teacher.toString() === req.user._id.toString()
+    ).length;
+
+    res.json({ count });
+  } catch (error) {
+    console.error("Join request count error:", error);
+    res.status(500).json({ msg: "Server error" });
+  }
+};

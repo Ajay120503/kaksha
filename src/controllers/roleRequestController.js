@@ -249,3 +249,17 @@ exports.deleteRoleRequest = async (req, res) => {
     res.status(500).json({ message: "Delete failed" });
   }
 };
+
+/* ================= ADMIN PENDING COUNT ================= */
+
+exports.getPendingRoleRequestCount = async (req, res) => {
+  try {
+    const count = await RoleRequest.countDocuments({
+      status: "pending",
+    });
+
+    res.json({ count });
+  } catch {
+    res.status(500).json({ message: "Failed to fetch count" });
+  }
+};
