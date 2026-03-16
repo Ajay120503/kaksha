@@ -74,34 +74,6 @@ exports.submitAssignment = async (req, res) => {
       }
     }
 
-    /* ================= PLAGIARISM CHECK ================= */
-
-    // const previousSubmissions = await Submission.find({
-    //   assignment: assignmentId,
-    //   student: { $ne: req.user._id },
-    // }).populate("student", "name email"); // populate student details
-
-    // let highestScore = 0;
-    // let matchedWith = [];
-
-    // for (const sub of previousSubmissions) {
-    //   if (!sub.extractedText || !extractedText) continue;
-
-    //   const score = cosineSimilarity(extractedText, sub.extractedText);
-
-    //   if (score >= 30) {
-    //     matchedWith.push({
-    //       studentId: sub.student._id,
-    //       studentName: sub.student.name,
-    //       studentEmail: sub.student.email,
-    //       similarity: score,
-    //       submissionId: sub._id,
-    //     });
-
-    //     highestScore = Math.max(highestScore, score);
-    //   }
-    // }
-
     /* ============================================================
        ===================== RESUBMISSION =========================
        ============================================================ */
@@ -187,6 +159,36 @@ exports.submitAssignment = async (req, res) => {
         flagged: highestScore > 40,
       },
     });
+
+
+    /* ================= UPDATE PREVIOUS SUBMISSIONS ================= */
+
+    for (const sub of previousSubmissions) {
+      if (!sub.extractedText || !extractedText) continue;
+
+      const score = tfidfSimilarity(extractedText, sub.extractedText);
+
+      if (score >= 30) {
+
+        // Update previous student's plagiarism data
+        sub.plagiarism.score = Math.max(sub.plagiarism?.score || 0, score);
+
+        const alreadyExists = sub.plagiarism?.matchedWith?.some(
+          (m) => m.student.toString() === req.user._id.toString()
+        );
+
+        if (!alreadyExists) {
+          sub.plagiarism.matchedWith.push({
+            student: req.user._id,
+            similarity: score,
+          });
+        }
+
+        sub.plagiarism.flagged = sub.plagiarism.score > 40;
+
+        await sub.save();
+      }
+    }
 
     /* ---------- NEW SUBMISSION NOTIFICATION ---------- */
 
