@@ -28,6 +28,22 @@ exports.submitAssignment = async (req, res) => {
     if (!assignment)
       return res.status(404).json({ msg: "Assignment not found" });
 
+    /* ================= DEADLINE CHECK ================= */
+
+    const deadlineDate = new Date(assignment.deadline);
+
+    const [hours, minutes] = assignment.endTime.split(":");
+
+    deadlineDate.setHours(hours);
+    deadlineDate.setMinutes(minutes);
+    deadlineDate.setSeconds(0);
+
+    if (Date.now() > deadlineDate.getTime()) {
+      return res.status(400).json({
+        msg: "Assignment deadline has passed",
+      });
+    }
+
     // Fetch classroom ONCE (important)
     const classroom = await Classroom.findById(assignment.classroom);
     if (!classroom)

@@ -17,12 +17,13 @@ exports.createAssignment = async (req, res) => {
       title,
       description,
       deadline,
+      endTime,
       maxMarks,
       attachments,
     } = req.body;
 
     // ================= REQUIRED FIELDS =================
-    if (!classId || !title || !deadline) {
+    if (!classId || !title || !deadline || !endTime) {
       return res
         .status(400)
         .json({ msg: "Class ID, Title & Due Date are required" });
@@ -56,6 +57,14 @@ exports.createAssignment = async (req, res) => {
       return res
         .status(400)
         .json({ msg: "Deadline must be a future date" });
+    }
+
+    const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    if (!timeRegex.test(endTime)) {
+      return res.status(400).json({
+        msg: "Invalid end time format (HH:mm)",
+      });
     }
 
     // ================= MAX MARKS VALIDATION =================
@@ -104,6 +113,7 @@ exports.createAssignment = async (req, res) => {
       title,
       description,
       deadline: parsedDeadline,
+      endTime,
       maxMarks: parsedMaxMarks,
       attachments: Array.isArray(attachments)
         ? attachments.filter(Boolean)
@@ -157,7 +167,7 @@ exports.getAssignments = async (req, res) => {
 exports.updateAssignment = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, deadline, maxMarks, attachments } = req.body;
+    const { title, description, deadline, endTime, maxMarks, attachments } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(id))
       return res.status(400).json({ msg: "Invalid Assignment ID" });
@@ -170,13 +180,25 @@ exports.updateAssignment = async (req, res) => {
     if (!classroom) return res.status(404).json({ msg: "Classroom not found" });
     if (req.user._id.toString() !== classroom.teacher.toString())
       return res.status(403).json({ msg: "You are not the teacher of this class" });
+    
 
     // Update only allowed fields (do NOT touch classroom!)
     assignment.title = title || assignment.title;
     assignment.description = description || assignment.description;
     assignment.deadline = deadline || assignment.deadline;
+    assignment.endTime = endTime || assignment.endTime;
     assignment.maxMarks = maxMarks || assignment.maxMarks;
     assignment.attachments = attachments || assignment.attachments;
+
+    if (endTime) {
+      const timeRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    if (!timeRegex.test(endTime)) {
+        return res.status(400).json({
+          msg: "Invalid end time format (HH:mm)",
+        });
+      }
+    }
 
     const updated = await assignment.save();
 

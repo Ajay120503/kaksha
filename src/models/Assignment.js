@@ -1,20 +1,3 @@
-// const mongoose = require("mongoose");
-
-// const assignmentSchema = new mongoose.Schema({
-//   classroom: { type: mongoose.Schema.Types.ObjectId, ref: "Classroom", required: true },
-//   title: { type: String, required: true },
-//   description: String,
-//   deadline: { type: Date, required: true },
-//   maxMarks: { type: Number, default: 100 },
-//   attachments: {
-//     type: [String],
-//     default: []
-//   }
-
-// }, { timestamps: true });
-
-// module.exports = mongoose.model("Assignment", assignmentSchema);
-
 const mongoose = require("mongoose");
 
 const assignmentSchema = new mongoose.Schema(
@@ -58,6 +41,11 @@ const assignmentSchema = new mongoose.Schema(
         },
         message: "Deadline must be a future date",
       },
+    },
+
+    endTime: {
+      type: String,
+      required: true
     },
 
     maxMarks: {
