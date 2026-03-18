@@ -41,7 +41,7 @@ app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/role-requests", require("./routes/roleRequestRoutes"));
 app.use("/api/join-requests", require("./routes/classJoinRequestRoutes"));
-
+app.use("/api/messages", require("./routes/messageRoutes"));
 
 // ================= GLOBAL ERROR HANDLER =================
 app.use((err, req, res, next) => {
