@@ -8,6 +8,7 @@ const setupSocket = (io) => {
 
         /* ================= ONLINE USERS ================= */
         socket.on("userOnline", (userId) => {
+            socket.userId = userId;
             onlineUsers.set(userId, socket.id);
             io.emit("onlineUsers", Array.from(onlineUsers.keys()));
         });
@@ -24,16 +25,19 @@ const setupSocket = (io) => {
 
         /* ================= JOIN CLASS ================= */
         socket.on("joinClassroom", (classId) => {
-            socket.join(classId.toString());
+            const roomId = classId.toString();
+            socket.join(roomId);
             console.log("User joined room:", classId);
         });
 
         /* ================= SEND MESSAGE ================= */
         socket.on("sendMessage", async (data) => {
             try {
-                const { classId, senderId, text, fileUrl, fileType } = data;
+                const { classId, senderId, text, fileUrl, fileType, type } = data;
 
                 console.log("📤 Sending message:", classId);
+
+                if (!text && !fileUrl) return;
 
                 const message = await Message.create({
                     classId,
@@ -41,6 +45,7 @@ const setupSocket = (io) => {
                     text,
                     fileUrl,
                     fileType,
+                    type: type || "text",
                 });
 
                 const populated = await message.populate("sender", "name");
@@ -67,9 +72,12 @@ const setupSocket = (io) => {
 
         /* ================= EDIT MESSAGE ================= */
         socket.on("editMessage", async ({ messageId, newText, classId }) => {
+        try {
             const msg = await Message.findById(messageId);
 
             if (!msg) return;
+            if (msg.sender.toString() !== socket.userId) return;
+            if (msg.type !== "text") return;
 
             msg.text = newText;
             msg.isEdited = true;
@@ -78,9 +86,11 @@ const setupSocket = (io) => {
 
             const updated = await msg.populate("sender", "name");
 
-            io.to(classId).emit("messageEdited", {
-                ...updated.toObject(),
-            });
+            io.to(classId.toString()).emit("messageEdited", updated);
+
+        } catch (err) {
+            console.error("Edit error:", err.message);
+        }
         });
 
         /* ================= DELETE MESSAGE ================= */
@@ -88,9 +98,13 @@ const setupSocket = (io) => {
             const msg = await Message.findById(messageId);
 
             if (!msg) return;
+            if (msg.sender.toString() !== socket.userId) return;
 
             msg.isDeleted = true;
             msg.text = "Message deleted";
+            msg.fileUrl = null;
+            msg.fileType = null;
+            msg.type = "text";
 
             await msg.save();
 

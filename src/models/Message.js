@@ -23,6 +23,11 @@ const messageSchema = new mongoose.Schema(
     fileType: {
       type: String,
     },
+    type: {
+      type: String,
+      enum: ["text", "image", "file"],
+      default: "text",
+    },
     isEdited: {
       type: Boolean,
       default: false,
