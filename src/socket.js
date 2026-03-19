@@ -63,7 +63,7 @@ const setupSocket = (io) => {
 
         /* ================= TYPING ================= */
         socket.on("typing", ({ classId, userName }) => {
-            socket.to(classId).emit("typing", userName);
+            socket.to(classId).emit("typing", { userName });
         });
 
         socket.on("stopTyping", ({ classId }) => {
