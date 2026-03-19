@@ -52,7 +52,8 @@ const notificationSchema = new mongoose.Schema(
         "post",
         "change_role",
         "role_request",
-        "comment"
+        "comment",
+        "chat"
 
       ],
       default: "general",

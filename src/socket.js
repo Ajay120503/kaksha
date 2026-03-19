@@ -1,4 +1,5 @@
 const Message = require("./models/Message");
+const Classroom = require("./models/Classroom");
 
 let onlineUsers = new Map();
 
@@ -31,11 +32,39 @@ const setupSocket = (io) => {
         });
 
         /* ================= SEND MESSAGE ================= */
+        // socket.on("sendMessage", async (data) => {
+        //     try {
+        //         const { classId, senderId, text, fileUrl, fileType, type } = data;
+
+        //         console.log("📤 Sending message:", classId);
+
+        //         if (!text && !fileUrl) return;
+
+        //         const message = await Message.create({
+        //             classId,
+        //             sender: senderId,
+        //             text,
+        //             fileUrl,
+        //             fileType,
+        //             type: type || "text",
+        //         });
+
+        //         const populated = await message.populate("sender", "name");
+
+        //         console.log("📡 Emitting to room:", classId);
+
+        //         io.to(classId).emit("receiveMessage", {
+        //             ...populated.toObject(),
+        //         });
+
+        //     } catch (err) {
+        //         console.error("❌ Send message error:", err.message);
+        //     }
+        // });
+
         socket.on("sendMessage", async (data) => {
             try {
                 const { classId, senderId, text, fileUrl, fileType, type } = data;
-
-                console.log("📤 Sending message:", classId);
 
                 if (!text && !fileUrl) return;
 
@@ -50,17 +79,71 @@ const setupSocket = (io) => {
 
                 const populated = await message.populate("sender", "name");
 
-                console.log("📡 Emitting to room:", classId);
-
+                // ================= EMIT MESSAGE =================
                 io.to(classId).emit("receiveMessage", {
                     ...populated.toObject(),
+                });
+
+                // ================= SEND NOTIFICATION =================
+                const classroom = await Classroom.findById(classId)
+                    .populate("students", "_id")
+                    .populate("teacher", "_id");
+
+                if (!classroom) return;
+
+                let recipients = [];
+
+                // STUDENTS
+                classroom.students.forEach((s) => {
+                    if (s._id.toString() !== senderId.toString()) {
+                        recipients.push({
+                            user: s._id,
+                            role: "student",
+                            read: false,
+                        });
+                    }
+                });
+
+                // TEACHER
+                if (
+                    classroom.teacher &&
+                    classroom.teacher._id.toString() !== senderId.toString()
+                ) {
+                    recipients.push({
+                        user: classroom.teacher._id,
+                        role: "teacher",
+                        read: false,
+                    });
+                }
+
+                //console.log("📢 Notification recipients:", recipients);
+
+                // DIRECT CREATE (IMPORTANT)
+                await require("./models/Notification").create({
+                    title: "New Message",
+                    message: `${populated.sender.name} sent a message`,
+                    recipients,
+                    createdBy: senderId,
+                    type: "chat",
+                    link: `/chat/${classId}`,
+                });
+
+                recipients.forEach((userId) => {
+                    const socketId = onlineUsers.get(userId);
+
+                    if (socketId) {
+                        io.to(socketId).emit("newNotification", {
+                            title: "New Message",
+                            message: `${populated.sender.name} sent a message`,
+                            classId,
+                        });
+                    }
                 });
 
             } catch (err) {
                 console.error("❌ Send message error:", err.message);
             }
         });
-
         /* ================= TYPING ================= */
         socket.on("typing", ({ classId, userName }) => {
             socket.to(classId).emit("typing", { userName });
@@ -72,25 +155,25 @@ const setupSocket = (io) => {
 
         /* ================= EDIT MESSAGE ================= */
         socket.on("editMessage", async ({ messageId, newText, classId }) => {
-        try {
-            const msg = await Message.findById(messageId);
+            try {
+                const msg = await Message.findById(messageId);
 
-            if (!msg) return;
-            if (msg.sender.toString() !== socket.userId) return;
-            if (msg.type !== "text") return;
+                if (!msg) return;
+                if (msg.sender.toString() !== socket.userId) return;
+                if (msg.type !== "text") return;
 
-            msg.text = newText;
-            msg.isEdited = true;
+                msg.text = newText;
+                msg.isEdited = true;
 
-            await msg.save();
+                await msg.save();
 
-            const updated = await msg.populate("sender", "name");
+                const updated = await msg.populate("sender", "name");
 
-            io.to(classId.toString()).emit("messageEdited", updated);
+                io.to(classId.toString()).emit("messageEdited", updated);
 
-        } catch (err) {
-            console.error("Edit error:", err.message);
-        }
+            } catch (err) {
+                console.error("Edit error:", err.message);
+            }
         });
 
         /* ================= DELETE MESSAGE ================= */
